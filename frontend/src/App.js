@@ -1,76 +1,37 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react';
+import fetchWords from './services/WordService';
+import Word from './components/Word';
+import Timer from './components/Timer';
 
 import './App.css';
 
-// TODO: Update word box and put all text / words into a different file
-const getWordBox = () => 'random words to test hello keep typing a couple more okay banana elon musk quote of the day'.split(' ')
-//.sort(() => Math.random() > 0.5 ? 1 : -1)
-
-function Word(props) {
-
-  const { text, active, correct } = props
-
-  if(correct === true) {
-    return <span className="correct">{text} </span>
-  }
-
-  if(correct === false) {
-    return <span className="incorrect">{text} </span>
-  }
-
-  if(active) {
-    return <span className="active">{text} </span>
-  }
-
-  return <span>{text} </span>
-}
-
-Word = React.memo(Word)
-
-function Timer(props) {
-  const { correctWords, startCounting } = props
-  const [timeElapsed, setTimeElapsed] = useState(0)
-
-  useEffect(() => {
-    let id
-    if(startCounting) {
-      id = setInterval(() => {
-        // do something
-        setTimeElapsed(oldTime => oldTime + 1)
-
-      }, 1000)
-    }
-
-    return () => {
-      clearInterval(id)
-    }
-
-  }, [startCounting])
-
-  const minutes = timeElapsed/60
-
-  return <div>
-    <p>Time: {timeElapsed}</p>
-    <p>Speed: {((correctWords/minutes) || 0).toFixed(2)} WPM</p>
-  </div>
-}
+// // TODO: Update word box and put all text / words into a different file
+// const getWordBox = () => 'random words to test hello keep typing a couple more okay banana elon musk quote of the day'.split(' ')
+// //.sort(() => Math.random() > 0.5 ? 1 : -1)
 
 function App() {
 
   // in what cases do you need to use [] and in what cases do you not need to?
   const [userInput, setUserInput] = useState('')
-  const wordBox = useRef(getWordBox())
+  const [wordBox, setWordBox] = useState([])
+
 
   const [startCounting, setStartCounting] = useState(false)
 
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
   const [correctWordArray, setCorrectWordArray] = useState([])
 
+  useEffect(() => {
+    fetchWords().then(words => {
+      setWordBox(words);
+    })
+  }, [])
+
   function updateUserInput(value) {
     // TODO: Restart button
     // Add a word count and a timer ( to get speed and whatnot )
 
-    if(currentWordIndex === wordBox.current.length) {
+    if(currentWordIndex === wordBox.length) {
       return
     }
 
@@ -80,7 +41,7 @@ function App() {
 
     if(value.endsWith(' ')) {
       
-      if(currentWordIndex === wordBox.current.length - 1) {
+      if(currentWordIndex === wordBox.length - 1) {
         // overflow
         setStartCounting(false)
         setUserInput('Completed')
@@ -95,7 +56,7 @@ function App() {
       setCorrectWordArray(data => {
         const word = value.trim()
         const newResult = [...data]
-        newResult[currentWordIndex] = word === wordBox.current[currentWordIndex]
+        newResult[currentWordIndex] = word === wordBox[currentWordIndex]
         return newResult
       })
 
@@ -113,21 +74,21 @@ function App() {
           correctWords={correctWordArray.filter(Boolean).length}
       />
 
-      <p>{wordBox.current.map((word, index) => {
+      <p>{wordBox.map((word, index) => {
         
           return <Word 
                   text={word}
-                  active={index=== currentWordIndex}
+                  active={index === currentWordIndex}
                   correct={correctWordArray[index]}
                   />
 
       })}</p>
       <input 
           placeholder='Start typing...'
-          field="text" 
+          type="text" 
           value={userInput} 
-          onChange={(e) => updateUserInput(e.target.value)}/>
-
+          onChange={(e) => updateUserInput(e.target.value)}
+        />
     </div>
   )
 }
