@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import fetchWords from './services/WordService';
 import Word from './components/Word';
 import Timer from './components/Timer';
@@ -14,56 +14,60 @@ function App() {
   // in what cases do you need to use [] and in what cases do you not need to?
   const [userInput, setUserInput] = useState('')
   const [wordBox, setWordBox] = useState([])
-
-
   const [startCounting, setStartCounting] = useState(false)
-
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
-  const [correctWordArray, setCorrectWordArray] = useState([])
+  const [correctChars, setCorrectChars] = useState([])
+  const [isTestOver, setIsTestOver] = useState(false)
 
   useEffect(() => {
     fetchWords().then(words => {
-      setWordBox(words);
+      setWordBox(words.split(' '));
     })
   }, [])
 
-  function updateUserInput(value) {
-    // TODO: Restart button
-    // Add a word count and a timer ( to get speed and whatnot )
+  const handleUserInput = (inputValue) => {
+    // check if test has ended, if so do nothing
+    if(isTestOver) return;
 
-    if(currentWordIndex === wordBox.length) {
-      return
+    // Start the timer as soon as the user starts typing
+    if (!startCounting) {
+      setStartCounting(true);
     }
 
-    if(!startCounting) {
-      setStartCounting(true)
-    }
+    // Update user input
+    setUserInput(inputValue);
 
-    if(value.endsWith(' ')) {
-      
-      if(currentWordIndex === wordBox.length - 1) {
-        // overflow
-        setStartCounting(false)
-        setUserInput('Completed')
+    // array to hold correctness state for each character
+    const newCorrectChars = wordBox.map((word, index) => {
+      if(index < currentWordIndex) {
+        return correctChars[index]
       } else {
-        setUserInput('')
+        // for current and future words, recalculate the correctness
+        const typedWord = inputValue.trim().split(' ')[index] || ''
+        return word.split('').map((char, charIndex) => {
+          return charIndex < typedWord.length ? char === typedWord[charIndex] : null;
+        })
       }
+    })
 
-      // user has finished the word -- check if it is equal
-      setCurrentWordIndex(index => index + 1)
+    //  update correctness state
+    setCorrectChars(newCorrectChars)
+    console.log(newCorrectChars)
 
-      // checking for the correct word
-      setCorrectWordArray(data => {
-        const word = value.trim()
-        const newResult = [...data]
-        newResult[currentWordIndex] = word === wordBox[currentWordIndex]
-        return newResult
-      })
-
-    } else {
-      setUserInput(value)
+    // check if user has finished typing the current word
+    if (inputValue.endsWith(' ') && inputValue.trim() !== '') {
+      // Move to the next word or finish the test if this is the last word.
+      if (currentWordIndex === wordBox.length - 1) {
+        setIsTestOver(true);
+        setStartCounting(false);
+      } else {
+        setCurrentWordIndex(currentIndex => currentIndex + 1);
+      }
+      setUserInput(''); // Clear the input field ready for the next word.
     }
-  }
+
+
+  };
 
   return (
     <div>
@@ -71,24 +75,36 @@ function App() {
 
       <Timer 
           startCounting={startCounting}
-          correctWords={correctWordArray.filter(Boolean).length}
+          correctWords={wordBox.slice(0, currentWordIndex).join(' ').length}
       />
 
-      <p>{wordBox.map((word, index) => {
-        
-          return <Word 
-                  text={word}
-                  active={index === currentWordIndex}
-                  correct={correctWordArray[index]}
-                  />
+      <div className='typing-area'>
+      {wordBox.map((word, index) => (
+          <Word 
+              key={index}
+              text={word}
+              active={index === currentWordIndex}
+              correct={correctChars[index]}
+              />
 
-      })}</p>
+      ))}
+      </div>
+
       <input 
-          placeholder='Start typing...'
+          placeholder={isTestOver ? 'Test over, click to restart' : 'Start typing...'}
           type="text" 
           value={userInput} 
-          onChange={(e) => updateUserInput(e.target.value)}
+          onChange={(e) => handleUserInput(e.target.value)}
+          autoFocus
+          disabled={isTestOver} // Disable input when test is over
         />
+
+      {isTestOver && (
+        <div>
+          <p>Test over, click to restart</p>
+        <button onClick={() => window.location.reload(false)}>Restart Test</button>
+        </div>
+      )}
     </div>
   )
 }

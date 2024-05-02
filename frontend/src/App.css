@@ -7,11 +7,13 @@
 .incorrect {
   font-weight: bold;
   color: red;
+  text-decoration: underline;
   /* background-color: black; */
 }
 
 .active {
   font-weight: bold;
+  background-color: yellow;
 }
 
 body {
