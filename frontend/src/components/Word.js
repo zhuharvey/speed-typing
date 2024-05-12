@@ -1,20 +1,24 @@
 import React from "react";
 
-function Word({ text, active, correct = [] }) {
+function Word({ text, active, correct }) {
     // Render each character in the word as a span
     // This allows for individual characters to be styled as correct/incorrect
     console.log(text, correct)
     return (
-      <span>
+      <span className={active ? "active" : ""}>
         {text.split('').map((char, index) => {
           let className = '';
-          if (active) {
-            if (correct[index] === true) {
-              className = 'correct';
-            } else if (correct[index] === false) {
-              className = 'incorrect';
-            }
+          if (correct === true) {
+            className = 'correct';
+          } else if (correct === false) {
+            className = 'incorrect';
           }
+
+          // Append active class only if the word is currently being typed
+          if (active) {
+            className += ' active';
+          }
+
           return (
             <span 
                 key={`${text}-${index}`}
@@ -25,6 +29,6 @@ function Word({ text, active, correct = [] }) {
         {' '} {/* Add a space after each word */}
       </span>
     );
-  }
+}
   
 export default React.memo(Word);
