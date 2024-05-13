@@ -19,6 +19,12 @@ function App() {
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
   const [previousWords, setPreviousWords] = useState([]) // state to hold history of previous words
   const [isTestOver, setIsTestOver] = useState(false)
+  
+  const [totalChars, setTotalChars] = useState(0)
+  const [correctChars, setCorrectChars] = useState(0);
+  const [incorrectChars, setIncorrectChars] = useState(0);
+  const [missingChars, setMissingChars] = useState(0);
+  const [extraChars, setExtraChars] = useState(0);
 
   useEffect(() => {
     fetchWords().then(words => {
@@ -43,6 +49,10 @@ function App() {
     // Update user input
     setUserInput(inputValue);
 
+    setTotalChars((prev) => prev + 1)
+    console.log(totalChars + ' total')
+    console.log(correctChars + ' correct')
+
     if (typeof inputValue !== 'string') {
       console.error('Expected string for inputValue but received:', typeof inputValue);
       return;  // Optionally exit the function if the type is incorrect
@@ -50,56 +60,64 @@ function App() {
 
     // check if the last character is a space and that there's more than just spaces
     if(inputValue.endsWith(' ') && inputValue.trim() !== '') {
-      const wordsTyped = inputValue.trim()
       const currentWord = wordBox[currentWordIndex]
-      const isCorrect = currentWord === wordsTyped
+      const typedWord = inputValue.trim()
+      const maxLen = Math.max(currentWord.length, typedWord.length)
 
-      // console.log(wordsTyped)
-      // console.log(currentWord)
+      let tempCorrect = 0
+      let tempIncorrect = 0
+      let tempExtra = 0
+      let tempMissing = 0
 
-      // Update the previous words state with the current word and its correctness
-      setPreviousWords(prev => [...prev, { word: currentWord, correct: isCorrect }])
+      for (let i = 0; i < maxLen; i++) {
+        if (i < typedWord.length && i < currentWord.length) {
+            if (typedWord[i] === currentWord[i]) {
+                tempCorrect++
+            } else {
+                tempIncorrect++
+            }
+        } else if (i >= typedWord.length) {
+            tempMissing++
+        } else if (i >= currentWord.length) {
+            tempExtra++
+        }
+      }
+
+      // if word is correct and a space is pressed, include the space as a correct character
+      if (typedWord === currentWord) {
+        tempCorrect++
+      }
+
+      // set character states
+      setCorrectChars((prev) => prev + tempCorrect);
+      setIncorrectChars((prev) => prev + tempIncorrect);
+      setExtraChars((prev) => prev + tempExtra);
+      setMissingChars((prev) => prev + tempMissing);
+
+      // determine is word is correct
+      const isCorrect = typedWord === currentWord;
+
+      // Update the previous words state with detailed information
+      setPreviousWords(prev => [...prev, {
+        word: currentWord + ' ',
+        correct: isCorrect,
+        details: {
+            correct: tempCorrect,
+            incorrect: tempIncorrect,
+            missing: tempMissing,
+            extra: tempExtra
+        }
+    }]);
 
       if (currentWordIndex === wordBox.length - 1) {
         setIsTestOver(true);
         setStartCounting(false);
       } else {
-        setCurrentWordIndex(index => index + 1);
+          setCurrentWordIndex(index => index + 1);
       }
-
-      setUserInput(''); // clear input field
+      setUserInput('');
     
     }
-
-
-    // // array to hold correctness state for each character
-    // const newCorrectChars = wordBox.map((word, index) => {
-    //   if(index < currentWordIndex) {
-    //     return correctChars[index]
-    //   } else {
-    //     // for current and future words, recalculate the correctness
-    //     const typedWord = inputValue.trim().split(' ')[index] || ''
-    //     return word.split('').map((char, charIndex) => {
-    //       return charIndex < typedWord.length ? char === typedWord[charIndex] : null;
-    //     })
-    //   }
-    // })
-
-    //  update correctness state
-    // setCorrectChars(newCorrectChars)
-    // console.log(newCorrectChars)
-
-    // // check if user has finished typing the current word
-    // if (inputValue.endsWith(' ') && inputValue.trim() !== '') {
-    //   // Move to the next word or finish the test if this is the last word.
-    //   if (currentWordIndex === wordBox.length - 1) {
-    //     setIsTestOver(true);
-    //     setStartCounting(false);
-    //   } else {
-    //     setCurrentWordIndex(currentIndex => currentIndex + 1);
-    //   }
-    //   setUserInput(''); // Clear the input field ready for the next word.
-    // }
 
 
   };
@@ -108,8 +126,12 @@ function App() {
     <div>
       <h1>Typing Test</h1>
       <Timer 
-          startCounting={startCounting} 
-          correctWords={previousWords.filter(w => w.correct).length} 
+          startCounting={startCounting}
+          correctChars={correctChars}
+          incorrectChars={incorrectChars}
+          missingChars={missingChars}
+          extraChars={extraChars}
+          totalChars={totalChars}
       />
 
       <PreviousWords 
