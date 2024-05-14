@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import fetchWords from './services/WordService';
 import Word from './components/Word';
 import Timer from './components/Timer';
-import PreviousWords from './components/PreviousWords'
 
 import './App.css';
 
@@ -49,14 +48,8 @@ function App() {
     // Update user input
     setUserInput(inputValue);
 
-    setTotalChars((prev) => prev + 1)
-    console.log(totalChars + ' total')
-    console.log(correctChars + ' correct')
-
-    if (typeof inputValue !== 'string') {
-      console.error('Expected string for inputValue but received:', typeof inputValue);
-      return;  // Optionally exit the function if the type is incorrect
-    }
+    // makes it so that backspace isn't counted as a character
+    setTotalChars((prev) => prev + inputValue.length - userInput.length)
 
     // check if the last character is a space and that there's more than just spaces
     if(inputValue.endsWith(' ') && inputValue.trim() !== '') {
@@ -133,10 +126,6 @@ function App() {
           extraChars={extraChars}
           totalChars={totalChars}
       />
-
-      <PreviousWords 
-          words={previousWords} 
-      /> {/* Display the previous words */}
 
       <div className='typing-area'>
       {wordBox.map((word, index) => (
