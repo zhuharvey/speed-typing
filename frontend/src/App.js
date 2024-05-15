@@ -183,6 +183,7 @@ function App() {
           />
       ))}
       </div>
+      
       <input
           placeholder={isTestOver ? 'Test over, click to restart' : 'Start typing...'}
           type="text"

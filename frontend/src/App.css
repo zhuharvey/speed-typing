@@ -1,19 +1,39 @@
 .correct {
-  font-weight: bold;
+  /* font-weight: bold; */
   color: green;
   /* background-color: black; */
 }
 
 .incorrect {
-  font-weight: bold;
+  /* font-weight: bold; */
   color: red;
-  text-decoration: underline;
+  /* text-decoration: underline; */
   /* background-color: black; */
 }
 
 .active {
-  font-weight: bold;
+  /* font-weight: bold; */
   background-color: yellow;
+}
+
+.typing-area {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  background-color: #f9f9f9;
+  min-height: 120px;  /* Adjust height as necessary */
+  height: 50px;
+  overflow: hidden;
+}
+
+.word {
+  margin: 10px; /* Space between words */
+  display: inline-block;
 }
 
 body {
