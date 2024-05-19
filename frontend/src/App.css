@@ -19,7 +19,7 @@
 .typing-area {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   max-width: 600px;
   margin: 0 auto;
@@ -32,8 +32,9 @@
 }
 
 .word {
-  margin: 10px; /* Space between words */
+  margin: 4px; /* Space between words */
   display: inline-block;
+  white-space:nowrap;
 }
 
 body {
