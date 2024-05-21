@@ -14,20 +14,23 @@ function App() {
 
   // in what cases do you need to use [] and in what cases do you not need to?
   const [userInput, setUserInput] = useState('')
-  const [wordBox, setWordBox] = useState([])
+  const [rows, setRows] = useState([]) // array of word rows
+  const [currentRow, setCurrentRow] = useState(0) // index of current top row
+  
   const [startCounting, setStartCounting] = useState(false)
-  const [currentWordIndex, setCurrentWordIndex] = useState(0)
   const [previousWords, setPreviousWords] = useState([]) // state to hold history of previous words
   const [isTestOver, setIsTestOver] = useState(false)
   
-  const [totalChars, setTotalChars] = useState(0)
-  const [correctChars, setCorrectChars] = useState(0);
-  const [incorrectChars, setIncorrectChars] = useState(0);
-  const [missingChars, setMissingChars] = useState(0);
-  const [extraChars, setExtraChars] = useState(0);
+  // const [totalChars, setTotalChars] = useState(0)
+  // const [correctChars, setCorrectChars] = useState(0);
+  // const [incorrectChars, setIncorrectChars] = useState(0);
+  // const [missingChars, setMissingChars] = useState(0);
+  // const [extraChars, setExtraChars] = useState(0);
 
   const [timeLimit, setTimeLimit] = useState(30) // default set to 30 seconds
   const [timeLeft, setTimeLeft] = useState(timeLimit)
+
+  console.log(rows)
 
   useEffect(() => {
       let timer = null;
@@ -44,26 +47,25 @@ function App() {
 
 
   useEffect(() => {
-    setWordBox(shuffleArray([...wordsData.words]));
-  }, []);
+    const newRows = []
+    let tempRow = []
+
+    wordsData.words.forEach((word, index) => {
+      tempRow.push(word)
+      // example: break into new row every 10 words
+      if (tempRow.length === 10 || index === wordsData.words.length - 1) {
+        newRows.push(tempRow)
+        tempRow = []
+      }
+  })
+
+  setRows(newRows)
+}, [])
 
   function handleTimeLimitChange(event) {
     const newTimeLimit = parseInt(event.target.value, 10);
     setTimeLimit(newTimeLimit);
     setTimeLeft(newTimeLimit);
-  }
-
-  function getRandomWord() {
-    return wordsData.words[Math.floor(Math.random() * wordsData.words.length)];
-  }
-
-  // function to initially shuffle the word box
-  function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]]; // Swap elements
-    }
-    return array;
   }
 
   const handleUserInput = (inputValue) => {
@@ -77,67 +79,30 @@ function App() {
 
     setUserInput(inputValue);
 
-    // makes it so that backspace isn't counted as a character
-    // total chars is calculated with every keystroke -> might be inefficient
-    setTotalChars((prev) => prev + inputValue.length - userInput.length)
-
     // check if the last character is a space and that there's more than just spaces
     if(inputValue.endsWith(' ') && inputValue.trim() !== '') {
-      const currentWord = wordBox[currentWordIndex]
-      const typedWord = inputValue.trim()
-      const maxLen = Math.max(currentWord.length, typedWord.length)
+      const currentWords = rows[currentRow]
+      const wordIndex = currentWords.findIndex(word => userInput.trim() === word)
+      const currentWord = currentWords[wordIndex]
+      const isEndOfRow = wordIndex === currentWords.length - 1
 
-      let tempCorrect = 0
-      let tempIncorrect = 0
-      let tempExtra = 0
-      let tempMissing = 0
+      let correct = inputValue.trim() === currentWord
 
-      for (let i = 0; i < maxLen; i++) {
-        if (i < typedWord.length && i < currentWord.length) {
-            if (typedWord[i] === currentWord[i]) {
-                tempCorrect++
-            } else {
-                tempIncorrect++
-            }
-        } else if (i >= typedWord.length) {
-            tempMissing++
-        } else if (i >= currentWord.length) {
-            tempExtra++
+      setPreviousWords(prev => [...prev, { word: currentWord, correct }])
+      setUserInput('')
+
+      if (isEndOfRow) {
+        // move to the next row
+        if (currentRow < rows.length - 1) {
+          setCurrentRow(currentRow + 1)
+        } else {
+          setIsTestOver(true)
         }
+      } else {
+        setCurrentRow(wordIndex + 1)
       }
 
-      // if word is correct and a space is pressed, include the space as a correct character
-      if (typedWord === currentWord) {
-        tempCorrect++
-      }
-
-      // set character states
-      setCorrectChars((prev) => prev + tempCorrect);
-      setIncorrectChars((prev) => prev + tempIncorrect);
-      setExtraChars((prev) => prev + tempExtra);
-      setMissingChars((prev) => prev + tempMissing);
-
-      // determine is word is correct
-      const isCorrect = typedWord === currentWord;
-
-      // Update the previous words state with detailed information
-      setPreviousWords(prev => [...prev, {
-        word: currentWord + ' ',
-        correct: isCorrect,
-        details: {
-            correct: tempCorrect,
-            incorrect: tempIncorrect,
-            missing: tempMissing,
-            extra: tempExtra
-        }
-    }]);
-
-    if (!isTestOver) {
-      setCurrentWordIndex(currentWordIndex + 1)
-      setWordBox([...wordBox, getRandomWord()])
-    }
-
-    setUserInput('')
+      setUserInput('')
 
 
     // if (currentWordIndex === wordBox.length - 1) {
@@ -158,11 +123,7 @@ function App() {
       <h1>Typing Test</h1>
       <Timer 
           startCounting={startCounting}
-          correctChars={correctChars}
-          incorrectChars={incorrectChars}
-          missingChars={missingChars}
-          extraChars={extraChars}
-          totalChars={totalChars}
+          timeLeft={timeLeft}
       />
 
       <p>Time left: {timeLeft} seconds</p>
@@ -174,14 +135,18 @@ function App() {
       </select>
 
       <div className='typing-area'>
-      {wordBox.map((word, index) => (
-          <Word
-              key={index}
-              text={word}
-              active={index === currentWordIndex}
-              correct={previousWords[index]?.correct}  // Pass the correct status from previousWords state
-          />
-      ))}
+        {rows.slice(currentRow, currentRow + 2).map((rowWords, idx) => (
+          <div key={idx} className="word-row">
+            {rowWords.map((word, wordIdx) => (
+              <Word
+                key={wordIdx}
+                text={word}
+                active={idx === 0 && wordIdx === currentRow} // Adjust based on your active word logic
+                correct={previousWords.find(p => p.word === word)?.correct}
+              />
+            ))}
+          </div>
+        ))}
       </div>
       
       <input
