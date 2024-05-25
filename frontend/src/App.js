@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import fetchWords from './services/WordService';
 import Word from './components/Word';
 import Timer from './components/Timer';
 import wordsData from './words/English.json'
@@ -18,19 +17,21 @@ function App() {
   const [currentRow, setCurrentRow] = useState(0) // index of current top row
   
   const [startCounting, setStartCounting] = useState(false)
-  const [previousWords, setPreviousWords] = useState([]) // state to hold history of previous words
-  const [isTestOver, setIsTestOver] = useState(false)
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [currentRowIndex, setCurrentRowIndex] = useState(0);
+  const [previousWords, setPreviousWords] = useState([]); // state to hold history of previous words
+  const [isTestOver, setIsTestOver] = useState(false);
+  const [timeLimit, setTimeLimit] = useState(30); // default set to 30 seconds
+  const [timeLeft, setTimeLeft] = useState(timeLimit);
   
-  // const [totalChars, setTotalChars] = useState(0)
-  // const [correctChars, setCorrectChars] = useState(0);
-  // const [incorrectChars, setIncorrectChars] = useState(0);
-  // const [missingChars, setMissingChars] = useState(0);
-  // const [extraChars, setExtraChars] = useState(0);
-
-  const [timeLimit, setTimeLimit] = useState(30) // default set to 30 seconds
-  const [timeLeft, setTimeLeft] = useState(timeLimit)
+  const [totalChars, setTotalChars] = useState(0)
+  const [correctChars, setCorrectChars] = useState(0);
+  const [incorrectChars, setIncorrectChars] = useState(0);
+  const [missingChars, setMissingChars] = useState(0);
+  const [extraChars, setExtraChars] = useState(0);
 
   console.log(rows)
+  console.log(currentRow)
 
   useEffect(() => {
       let timer = null;
