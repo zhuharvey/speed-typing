@@ -6,10 +6,6 @@ import wordsData from './words/English.json'
 
 import './App.css';
 
-// // TODO: Update word box and put all text / words into a different file
-// const getWordBox = () => 'random words to test hello keep typing a couple more okay banana elon musk quote of the day'.split(' ')
-// //.sort(() => Math.random() > 0.5 ? 1 : -1)
-
 function App() {
 
   // in what cases do you need to use [] and in what cases do you not need to?
