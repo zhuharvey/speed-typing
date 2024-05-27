@@ -58,6 +58,7 @@ function App() {
     const newTimeLimit = parseInt(event.target.value, 10);
     setTimeLimit(newTimeLimit);
     setTimeLeft(newTimeLimit);
+    setStartCounting(false);
   };
 
   const handleUserInput = (inputValue) => {
@@ -78,6 +79,9 @@ function App() {
       const typedWord = inputValue.trim()
       const maxLen = Math.max(currentWord.length, typedWord.length)
 
+      // determine correctness based on if the full typed word matches the current word
+      const isCorrect = typedWord === currentWord;
+
       let tempCorrect = 0
       let tempIncorrect = 0
       let tempExtra = 0
@@ -97,6 +101,9 @@ function App() {
         }
       }
 
+      // if word is correct and a space is pressed, include the space as a correct character
+      if (typedWord === currentWord) tempCorrect++;
+
       // Update character states
       setCorrectChars((prev) => prev + tempCorrect)
       setIncorrectChars((prev) => prev + tempIncorrect)
@@ -106,7 +113,7 @@ function App() {
       // Update previousWords state
       setPreviousWords(prev => [...prev, {
         word: currentWord,
-        correct: typedWord === currentWord,
+        correct: isCorrect,
         details: {
             correct: tempCorrect,
             incorrect: tempIncorrect,
@@ -136,7 +143,13 @@ function App() {
   return (
     <div>
       <h1>Typing Test</h1>
-      <Timer startCounting={startCounting} timeLeft={timeLeft} />
+      <Timer 
+      startCounting={startCounting}
+      timeLeft={timeLeft} 
+      setTimeLeft={setTimeLeft}
+      correctChars={correctChars}
+      totalChars={totalChars}
+      />
       <select onChange={handleTimeLimitChange} value={timeLimit}>
         <option value={10}>10 seconds</option>
         <option value={15}>15 seconds</option>
@@ -150,7 +163,7 @@ function App() {
                 key={wordIdx}
                 text={word}
                 active={idx === 0 && wordIdx === currentWordIndex}
-                correct={idx === 0 && wordIdx < currentWordIndex} // Adjust based on your logic
+                correct={previousWords.find(p => p.word === word)?.correct}
               />
             ))}
           </div>
