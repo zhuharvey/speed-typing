@@ -23,6 +23,7 @@ function App() {
   const [incorrectChars, setIncorrectChars] = useState(0);
   const [missingChars, setMissingChars] = useState(0);
   const [extraChars, setExtraChars] = useState(0);
+  const[wordCount, setWordCount] = useState(0);
 
   useEffect(() => {
       let timer = null;
@@ -61,6 +62,13 @@ function App() {
     setStartCounting(false);
   };
 
+  // TODO: will be changed in the future to accomodate dynamic row length
+  const rowLength = 10;
+
+  const calculateGlobalIndex = (rowIndex, wordIndex) => {
+    return rowIndex * rowLength + wordIndex;
+  }
+
   const handleUserInput = (inputValue) => {
     // check if test has ended, if so do nothing
     if(isTestOver) return;
@@ -82,10 +90,7 @@ function App() {
       // determine correctness based on if the full typed word matches the current word
       const isCorrect = typedWord === currentWord;
 
-      let tempCorrect = 0
-      let tempIncorrect = 0
-      let tempExtra = 0
-      let tempMissing = 0
+      let tempCorrect = 0, tempIncorrect = 0, tempExtra = 0, tempMissing = 0
 
       for (let i = 0; i < maxLen; i++) {
         if (i < typedWord.length && i < currentWord.length) {
@@ -112,6 +117,7 @@ function App() {
 
       // Update previousWords state
       setPreviousWords(prev => [...prev, {
+        index: wordCount,
         word: currentWord,
         correct: isCorrect,
         details: {
@@ -121,6 +127,8 @@ function App() {
             extra: tempExtra
         }
       }]);
+
+      setWordCount(wordCount + 1);
 
       if (currentWordIndex === currentWords.length - 1) {
         if (currentRowIndex < rows.length - 1) {
@@ -158,14 +166,18 @@ function App() {
       <div className='typing-area'>
         {rows.map((rowWords, idx) => (
           <div key={idx} className="word-row">
-            {rowWords.map((word, wordIdx) => (
-              <Word
-                key={wordIdx}
-                text={word}
-                active={idx === 0 && wordIdx === currentWordIndex}
-                correct={previousWords.find(p => p.word === word)?.correct}
-              />
-            ))}
+            {rowWords.map((word, wordIdx) => {
+              // calculate a unique index for each word
+              let globalWordIndex = calculateGlobalIndex(idx, wordIdx);
+              return (
+                <Word
+                  key={wordIdx}
+                  text={word}
+                  active={idx === currentRowIndex && wordIdx === currentWordIndex}
+                  correct={previousWords.find(p => p.index === globalWordIndex)?.correct}
+                />
+              );
+            })}
           </div>
         ))}
       </div>
