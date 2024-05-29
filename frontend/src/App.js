@@ -23,7 +23,11 @@ function App() {
   const [incorrectChars, setIncorrectChars] = useState(0);
   const [missingChars, setMissingChars] = useState(0);
   const [extraChars, setExtraChars] = useState(0);
-  const[wordCount, setWordCount] = useState(0);
+  const [wordCount, setWordCount] = useState(0);
+
+  const [rerenderKey, setRerenderKey] = useState(0);
+
+  console.log(previousWords)
 
   useEffect(() => {
       let timer = null;
@@ -82,14 +86,13 @@ function App() {
 
     // check if the last character is a space and that there's more than just spaces
     if(inputValue.endsWith(' ') && inputValue.trim() !== '') {
-      const currentWords = rows[currentRowIndex]
+      const currentWords = rows[0] // first row is always the current row
       const currentWord = currentWords[currentWordIndex]
       const typedWord = inputValue.trim()
       const maxLen = Math.max(currentWord.length, typedWord.length)
 
       // determine correctness based on if the full typed word matches the current word
-      const isCorrect = typedWord === currentWord;
-
+      let isCorrect = typedWord === currentWord;
       let tempCorrect = 0, tempIncorrect = 0, tempExtra = 0, tempMissing = 0
 
       for (let i = 0; i < maxLen; i++) {
@@ -131,14 +134,10 @@ function App() {
       setWordCount(wordCount + 1);
 
       if (currentWordIndex === currentWords.length - 1) {
-        if (currentRowIndex < rows.length - 1) {
-          setCurrentRowIndex(currentRowIndex + 1);
-        } else {
-          setIsTestOver(true);
-          setStartCounting(false);
-        }
         setCurrentWordIndex(0);
-        setRows((prevRows) => [...prevRows.slice(1), generateRow()]);
+        setRows(prevRows => [...prevRows.slice(1), generateRow()]);
+        // update only when moving to the next row
+        setRerenderKey(prev => prev + 1);
       } else {
         setCurrentWordIndex(currentWordIndex + 1);
       }
@@ -167,14 +166,13 @@ function App() {
         {rows.map((rowWords, idx) => (
           <div key={idx} className="word-row">
             {rowWords.map((word, wordIdx) => {
-              // calculate a unique index for each word
-              let globalWordIndex = calculateGlobalIndex(idx, wordIdx);
               return (
                 <Word
                   key={wordIdx}
                   text={word}
                   active={idx === currentRowIndex && wordIdx === currentWordIndex}
-                  correct={previousWords.find(p => p.index === globalWordIndex)?.correct}
+                  // calculateGlobalIndex calculates a unique index for each word
+                  correct={previousWords.find(p => p.index === calculateGlobalIndex(idx, wordIdx))?.correct}
                 />
               );
             })}
