@@ -16,6 +16,8 @@ function App() {
   const [isTestOver, setIsTestOver] = useState(false);
   const [timeLimit, setTimeLimit] = useState(30); // default set to 30 seconds
   const [timeLeft, setTimeLeft] = useState(timeLimit);
+
+  const [CURR_GLOBAL_ROW, SET_CURR_GLOBAL_ROW] = useState(0);
   
   const [previousWords, setPreviousWords] = useState([]); // state to hold history of previous words
   const [totalChars, setTotalChars] = useState(0)
@@ -47,6 +49,14 @@ function App() {
     initializeRows();
   }, []);
 
+  useEffect(() => {
+    console.log(previousWords);
+  }, [previousWords]);
+
+  useEffect(() => {
+    console.log(CURR_GLOBAL_ROW);
+  }, [CURR_GLOBAL_ROW]);
+
   const initializeRows = () => {
     setRows([generateRow(), generateRow()]);
   };
@@ -70,7 +80,8 @@ function App() {
   const rowLength = 10;
 
   const calculateGlobalIndex = (rowIndex, wordIndex) => {
-    return rowIndex * rowLength + wordIndex;
+    console.log(rowIndex, wordIndex)
+    return (CURR_GLOBAL_ROW + rowIndex) * rowLength + wordIndex;
   }
 
   const handleUserInput = (inputValue) => {
@@ -135,14 +146,23 @@ function App() {
 
       if (currentWordIndex === currentWords.length - 1) {
         setCurrentWordIndex(0);
-        setRows(prevRows => [...prevRows.slice(1), generateRow()]);
+        setRows(prevRows => [...prevRows.slice(1), generateRow()]); 
         // update only when moving to the next row
         setRerenderKey(prev => prev + 1);
+        SET_CURR_GLOBAL_ROW(CURR_GLOBAL_ROW + 1);
       } else {
         setCurrentWordIndex(currentWordIndex + 1);
       }
 
       setUserInput('');
+    }
+  };
+
+  const getCorrectValue = (previousWords, idx, wordIdx, defaultValue) => {
+    try {
+      return previousWords[calculateGlobalIndex(idx, wordIdx)].correct;
+    } catch (error) {
+      return defaultValue; // set defaultValue to whatever you want to return in case of an error
     }
   };
 
@@ -168,11 +188,11 @@ function App() {
             {rowWords.map((word, wordIdx) => {
               return (
                 <Word
-                  key={wordIdx}
+                  key={calculateGlobalIndex(idx, wordIdx)}
                   text={word}
-                  active={idx === currentRowIndex && wordIdx === currentWordIndex}
+                  active={calculateGlobalIndex(idx, wordIdx) === previousWords.length}
                   // calculateGlobalIndex calculates a unique index for each word
-                  correct={previousWords.find(p => p.index === calculateGlobalIndex(idx, wordIdx))?.correct}
+                  correct={getCorrectValue(previousWords, idx, wordIdx, null)}
                 />
               );
             })}
