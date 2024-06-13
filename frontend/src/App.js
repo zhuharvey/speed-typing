@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import fetchWords from './services/WordService';
 import Word from './components/Word';
 import Timer from './components/Timer';
 import wordsData from './words/English.json'
@@ -20,6 +19,7 @@ function App() {
 
   const [CURR_GLOBAL_ROW, SET_CURR_GLOBAL_ROW] = useState(0);
   
+  const [previousWords, setPreviousWords] = useState([]); // state to hold history of previous words
   const [totalChars, setTotalChars] = useState(0)
   const [correctChars, setCorrectChars] = useState(0);
   const [incorrectChars, setIncorrectChars] = useState(0);
@@ -46,7 +46,7 @@ function App() {
 
 
   useEffect(() => {
-    setWordBox(shuffleArray([...wordsData.words]));
+    initializeRows();
   }, []);
 
   useEffect(() => {
@@ -89,15 +89,11 @@ function App() {
     if(isTestOver) return;
 
     // Start the timer as soon as the user starts typing
-    if (!startCounting) {
-      setStartCounting(true);
-    }
+    if (!startCounting) setStartCounting(true);
 
     setUserInput(inputValue);
 
-    // makes it so that backspace isn't counted as a character
-    // total chars is calculated with every keystroke -> might be inefficient
-    setTotalChars((prev) => prev + inputValue.length - userInput.length)
+    setTotalChars((prev) => prev + inputValue.length - userInput.length);
 
     // check if the last character is a space and that there's more than just spaces
     if(inputValue.endsWith(' ') && inputValue.trim() !== '') {
@@ -106,19 +102,21 @@ function App() {
       const typedWord = inputValue.trim()
       const maxLen = Math.max(currentWord.length, typedWord.length)
 
+      // determine correctness based on if the full typed word matches the current word
+      let isCorrect = typedWord === currentWord;
       let tempCorrect = 0, tempIncorrect = 0, tempExtra = 0, tempMissing = 0
 
       for (let i = 0; i < maxLen; i++) {
         if (i < typedWord.length && i < currentWord.length) {
-            if (typedWord[i] === currentWord[i]) {
-                tempCorrect++
-            } else {
-                tempIncorrect++
-            }
+          if (typedWord[i] === currentWord[i]) {
+            tempCorrect++;
+          } else {
+            tempIncorrect++;
+          }
         } else if (i >= typedWord.length) {
-            tempMissing++
+          tempMissing++;
         } else if (i >= currentWord.length) {
-            tempExtra++
+          tempExtra++;
         }
       }
 
@@ -131,16 +129,7 @@ function App() {
       setMissingChars((prev) => prev + tempMissing)
       setExtraChars((prev) => prev + tempExtra)
 
-      // set character states
-      setCorrectChars((prev) => prev + tempCorrect);
-      setIncorrectChars((prev) => prev + tempIncorrect);
-      setExtraChars((prev) => prev + tempExtra);
-      setMissingChars((prev) => prev + tempMissing);
-
-      // determine is word is correct
-      const isCorrect = typedWord === currentWord;
-
-      // Update the previous words state with detailed information
+      // Update previousWords state
       setPreviousWords(prev => [...prev, {
         index: wordCount,
         word: currentWord,
@@ -151,7 +140,7 @@ function App() {
             missing: tempMissing,
             extra: tempExtra
         }
-    }]);
+      }]);
 
       setWordCount(wordCount + 1);
 
@@ -167,6 +156,7 @@ function App() {
 
       setUserInput('');
     }
+  };
 
   const getCorrectValue = (previousWords, idx, wordIdx, defaultValue) => {
     try {
@@ -188,11 +178,10 @@ function App() {
       totalChars={totalChars}
       />
       <select onChange={handleTimeLimitChange} value={timeLimit}>
-          <option value={10}>10 seconds</option>
-          <option value={15}>15 seconds</option>
-          <option value={30}>30 seconds</option>
+        <option value={10}>10 seconds</option>
+        <option value={15}>15 seconds</option>
+        <option value={30}>30 seconds</option>
       </select>
-
       <div className='typing-area'>
         {rows.map((rowWords, idx) => (
           <div key={idx} className="word-row">
@@ -210,14 +199,13 @@ function App() {
           </div>
         ))}
       </div>
-      
       <input
-          placeholder={isTestOver ? 'Test over, click to restart' : 'Start typing...'}
-          type="text"
-          value={userInput}
-          onChange={(e) => handleUserInput(e.target.value)}
-          autoFocus
-          disabled={isTestOver}
+        placeholder={isTestOver ? 'Test over, click to restart' : 'Start typing...'}
+        type="text"
+        value={userInput}
+        onChange={(e) => handleUserInput(e.target.value)}
+        autoFocus
+        disabled={isTestOver}
       />
       {isTestOver && (
         <div>
@@ -230,4 +218,3 @@ function App() {
 }
 
 export default App;
-
