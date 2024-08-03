@@ -4,6 +4,7 @@ import Timer from './components/Timer';
 import wordsData from './words/English.json'
 
 import './App.css';
+import { Auth } from './components/auth';
 
 function App() {
 
@@ -169,6 +170,8 @@ function App() {
 
   return (
     <div>
+      <Auth />
+    <div>
       <h1>Typing Test</h1>
       <Timer 
       startCounting={startCounting}
@@ -213,6 +216,7 @@ function App() {
           <button onClick={() => window.location.reload()}>Restart Test</button>
         </div>
       )}
+    </div>
     </div>
   );
 }
