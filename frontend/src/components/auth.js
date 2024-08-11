@@ -10,6 +10,9 @@ export const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  console.log(auth?.currentUser?.email);
+  console.log(auth?.currentUser?.photoURL);
+
   // when working with firebase, a lot will be returned as a promise
   const signIn = async () => {
     try {
