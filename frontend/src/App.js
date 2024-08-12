@@ -6,16 +6,6 @@ import wordsData from "./words/English.json";
 import "./App.css";
 import { Auth } from "./components/auth";
 
-import { db } from "./config/firebase";
-import {
-  getDocs,
-  collection,
-  addDoc,
-  deleteDoc,
-  updateDoc,
-  doc,
-} from "firebase/firestore";
-
 function App() {
   const [userInput, setUserInput] = useState("");
   const [rows, setRows] = useState([]); // array of word rows
