@@ -1,44 +1,22 @@
 import React, { useEffect, useState } from "react";
-import Word from "./components/Word";
-import Timer from "./components/Timer";
-import wordsData from "./words/English.json";
-
-import "./App.css";
-import { Auth } from "./components/auth";
-
-import { db } from "./config/firebase";
-import {
-  getDocs,
-  collection,
-  addDoc,
-  deleteDoc,
-  updateDoc,
-  doc,
-} from "firebase/firestore";
+import SpeedTestArea from "./components/SpeedTestArea";
+import TimerComponent from "./components/TimerComponent";
+import {Auth} from "./components/auth";
+import RestartComponent from "./components/RestartComponent";
+import wordsData from "./words/English.json"; // Ensure this import is correct
 
 function App() {
   const [userInput, setUserInput] = useState("");
-  const [rows, setRows] = useState([]); // array of word rows
-  const [currentRowIndex, setCurrentRowIndex] = useState(0); // index of current row
-  const [currentWordIndex, setCurrentWordIndex] = useState(0); // index of current word in current row
-  const [startCounting, setStartCounting] = useState(false); // state to start the timer
+  const [rows, setRows] = useState([]);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [isTestOver, setIsTestOver] = useState(false);
-  const [timeLimit, setTimeLimit] = useState(30); // default set to 30 seconds
-  const [timeLeft, setTimeLeft] = useState(timeLimit);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [startCounting, setStartCounting] = useState(false);
 
-  const [CURR_GLOBAL_ROW, SET_CURR_GLOBAL_ROW] = useState(0);
-
-  const [previousWords, setPreviousWords] = useState([]); // state to hold history of previous words
-  const [totalChars, setTotalChars] = useState(0);
-  const [correctChars, setCorrectChars] = useState(0);
-  const [incorrectChars, setIncorrectChars] = useState(0);
-  const [missingChars, setMissingChars] = useState(0);
-  const [extraChars, setExtraChars] = useState(0);
+  const [previousWords, setPreviousWords] = useState([]);
   const [wordCount, setWordCount] = useState(0);
-
-  const [rerenderKey, setRerenderKey] = useState(0);
-
-  const [checkSpeed, setCheckSpeed] = useState([]);
+  const [correctChars, setCorrectChars] = useState(0);
+  const [totalChars, setTotalChars] = useState(0);
 
   useEffect(() => {
     let timer = null;
@@ -57,14 +35,6 @@ function App() {
     initializeRows();
   }, []);
 
-  useEffect(() => {
-    //console.log(previousWords);
-  }, [previousWords]);
-
-  useEffect(() => {
-    //console.log(CURR_GLOBAL_ROW);
-  }, [CURR_GLOBAL_ROW]);
-
   const initializeRows = () => {
     setRows([generateRow(), generateRow()]);
   };
@@ -74,101 +44,39 @@ function App() {
   };
 
   const getRandomWord = () => {
-    return wordsData.words[Math.floor(Math.random() * wordsData.words.length)];
+    return wordsData[Math.floor(Math.random() * wordsData.length)];
   };
 
-  const handleTimeLimitChange = (event) => {
-    const newTimeLimit = parseInt(event.target.value, 10);
-    setTimeLimit(newTimeLimit);
-    setTimeLeft(newTimeLimit);
-    setStartCounting(false);
-  };
-
-  // TODO: will be changed in the future to accomodate dynamic row length
-  const rowLength = 10;
-
-  const calculateGlobalIndex = (rowIndex, wordIndex) => {
-    //console.log(rowIndex, wordIndex)
-    return (CURR_GLOBAL_ROW + rowIndex) * rowLength + wordIndex;
-  };
-
-  const handleUserInput = (inputValue) => {
-    // check if test has ended, if so do nothing
-    if (isTestOver) return;
-
-    // Start the timer as soon as the user starts typing
-    if (!startCounting) setStartCounting(true);
-
+  const handleUserInput = (e) => {
+    const inputValue = e.target.value;
     setUserInput(inputValue);
 
-    setTotalChars((prev) => prev + inputValue.length - userInput.length);
-
-    // check if the last character is a space and that there's more than just spaces
     if (inputValue.endsWith(" ") && inputValue.trim() !== "") {
-      const currentWords = rows[0]; // first row is always the current row
-      const currentWord = currentWords[currentWordIndex];
-      const typedWord = inputValue.trim();
-      const maxLen = Math.max(currentWord.length, typedWord.length);
+      processInput(inputValue.trim());
+    }
+  };
 
-      // determine correctness based on if the full typed word matches the current word
-      let isCorrect = typedWord === currentWord;
-      let tempCorrect = 0,
-        tempIncorrect = 0,
-        tempExtra = 0,
-        tempMissing = 0;
+  const processInput = (input) => {
+    const currentWords = rows[0];
+    const currentWord = currentWords[currentWordIndex];
+    const isCorrect = input === currentWord;
 
-      for (let i = 0; i < maxLen; i++) {
-        if (i < typedWord.length && i < currentWord.length) {
-          if (typedWord[i] === currentWord[i]) {
-            tempCorrect++;
-          } else {
-            tempIncorrect++;
-          }
-        } else if (i >= typedWord.length) {
-          tempMissing++;
-        } else if (i >= currentWord.length) {
-          tempExtra++;
-        }
-      }
+    if (isCorrect) {
+      correctChars += currentWord.length;
+    }
 
-      // if word is correct and a space is pressed, include the space as a correct character
-      if (typedWord === currentWord) tempCorrect++;
+    setTotalChars(totalChars + input.length);
+    setPreviousWords([
+      ...previousWords,
+      { word: currentWord, correct: isCorrect },
+    ]);
+    setWordCount(wordCount + 1);
 
-      // Update character states
-      setCorrectChars((prev) => prev + tempCorrect);
-      setIncorrectChars((prev) => prev + tempIncorrect);
-      setMissingChars((prev) => prev + tempMissing);
-      setExtraChars((prev) => prev + tempExtra);
-
-      // Update previousWords state
-      setPreviousWords((prev) => [
-        ...prev,
-        {
-          index: wordCount,
-          word: currentWord,
-          correct: isCorrect,
-          details: {
-            correct: tempCorrect,
-            incorrect: tempIncorrect,
-            missing: tempMissing,
-            extra: tempExtra,
-          },
-        },
-      ]);
-
-      setWordCount(wordCount + 1);
-
-      if (currentWordIndex === currentWords.length - 1) {
-        setCurrentWordIndex(0);
-        setRows((prevRows) => [...prevRows.slice(1), generateRow()]);
-        // update only when moving to the next row
-        setRerenderKey((prev) => prev + 1);
-        SET_CURR_GLOBAL_ROW(CURR_GLOBAL_ROW + 1);
-      } else {
-        setCurrentWordIndex(currentWordIndex + 1);
-      }
-
-      setUserInput("");
+    if (currentWordIndex === currentWords.length - 1) {
+      setCurrentWordIndex(0);
+      setRows([rows[1], generateRow()]);
+    } else {
+      setCurrentWordIndex(currentWordIndex + 1);
     }
   };
 
@@ -183,59 +91,22 @@ function App() {
   return (
     <div>
       <Auth />
-      <div>
-        <h1>Typing Test</h1>
-        <Timer
-          startCounting={startCounting}
-          timeLeft={timeLeft}
-          setTimeLeft={setTimeLeft}
-          correctChars={correctChars}
-          totalChars={totalChars}
-        />
-        <select onChange={handleTimeLimitChange} value={timeLimit}>
-          <option value={10}>10 seconds</option>
-          <option value={15}>15 seconds</option>
-          <option value={30}>30 seconds</option>
-        </select>
-        <div className="typing-area">
-          {rows.map((rowWords, idx) => (
-            <div key={idx} className="word-row">
-              {rowWords.map((word, wordIdx) => {
-                return (
-                  <Word
-                    key={calculateGlobalIndex(idx, wordIdx)}
-                    text={word}
-                    active={
-                      calculateGlobalIndex(idx, wordIdx) ===
-                      previousWords.length
-                    }
-                    // calculateGlobalIndex calculates a unique index for each word
-                    correct={getCorrectValue(previousWords, idx, wordIdx, null)}
-                  />
-                );
-              })}
-            </div>
-          ))}
-        </div>
-        <input
-          placeholder={
-            isTestOver ? "Test over, click to restart" : "Start typing..."
-          }
-          type="text"
-          value={userInput}
-          onChange={(e) => handleUserInput(e.target.value)}
-          autoFocus
-          disabled={isTestOver}
-        />
-        {isTestOver && (
-          <div>
-            <p>Test over, click to restart</p>
-            <button onClick={() => window.location.reload()}>
-              Restart Test
-            </button>
-          </div>
-        )}
-      </div>
+      <TimerComponent
+        startCounting={startCounting}
+        timeLeft={timeLeft}
+        setTimeLeft={setTimeLeft}
+        correctChars={correctChars}
+        totalChars={totalChars}
+      />
+      <SpeedTestArea
+        rows={rows}
+        handleUserInput={handleUserInput}
+        userInput={userInput}
+        isTestOver={isTestOver}
+        getCorrectValue={getCorrectValue} // Passing getCorrectValue as a prop
+        previousWords={previousWords}
+      />
+      <RestartComponent isTestOver={isTestOver} />
     </div>
   );
 }

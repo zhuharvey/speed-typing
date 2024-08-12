@@ -1,16 +1,16 @@
 import React from "react";
 
 function Word({ text, active, correct }) {
+  const safeText = text || ""; 
+  
   // Ensuring that the correct and incorrect classes are only applied after evaluation
   const wordClasses = `word ${active ? "active" : ""} ${
     correct === true ? "correct" : correct === false ? "incorrect" : ""
   }`;
 
-
   return (
     <span className={wordClasses}>
-      {text.split('').map((char, index) => {
-        // Only apply the specific character class if the word has been fully evaluated
+      {safeText.split('').map((char, index) => {
         let className = '';
         if (correct === true) {
           className = 'correct';
@@ -18,7 +18,7 @@ function Word({ text, active, correct }) {
           className = 'incorrect';
         }
         return (
-          <span key={`${text}-${index}`} className={className}>
+          <span key={`${safeText}-${index}`} className={className}>
             {char}
           </span>
         );
