@@ -17,7 +17,6 @@ import {
 } from "firebase/firestore";
 
 function App() {
-  // in what cases do you need to use [] and in what cases do you not need to?
   const [userInput, setUserInput] = useState("");
   const [rows, setRows] = useState([]); // array of word rows
   const [currentRowIndex, setCurrentRowIndex] = useState(0); // index of current row
