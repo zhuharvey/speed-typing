@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import Word from "./components/Word";
 import Timer from "./components/Timer";
 import wordsData from "./words/English.json";
+import { Auth } from "./components/auth";
 
 import "./App.css";
-import { Auth } from "./components/auth";
+import TimerComponent from "./components/TimerComponent";
 
 function App() {
   const [userInput, setUserInput] = useState("");
@@ -13,8 +14,6 @@ function App() {
   const [currentWordIndex, setCurrentWordIndex] = useState(0); // index of current word in current row
   const [startCounting, setStartCounting] = useState(false); // state to start the timer
   const [isTestOver, setIsTestOver] = useState(false);
-  const [timeLimit, setTimeLimit] = useState(30); // default set to 30 seconds
-  const [timeLeft, setTimeLeft] = useState(timeLimit);
 
   const [CURR_GLOBAL_ROW, SET_CURR_GLOBAL_ROW] = useState(0);
 
@@ -29,19 +28,6 @@ function App() {
   const [rerenderKey, setRerenderKey] = useState(0);
 
   const [checkSpeed, setCheckSpeed] = useState([]);
-
-  useEffect(() => {
-    let timer = null;
-    if (startCounting && timeLeft > 0) {
-      timer = setTimeout(() => {
-        setTimeLeft(timeLeft - 1);
-      }, 1000);
-    } else if (timeLeft === 0) {
-      setIsTestOver(true);
-      setStartCounting(false);
-    }
-    return () => clearTimeout(timer);
-  }, [startCounting, timeLeft]);
 
   useEffect(() => {
     initializeRows();
@@ -65,13 +51,6 @@ function App() {
 
   const getRandomWord = () => {
     return wordsData.words[Math.floor(Math.random() * wordsData.words.length)];
-  };
-
-  const handleTimeLimitChange = (event) => {
-    const newTimeLimit = parseInt(event.target.value, 10);
-    setTimeLimit(newTimeLimit);
-    setTimeLeft(newTimeLimit);
-    setStartCounting(false);
   };
 
   // TODO: will be changed in the future to accomodate dynamic row length
@@ -170,23 +149,21 @@ function App() {
     }
   };
 
+  const handleTimeExpired = () => {
+    setIsTestOver(true); // This will stop the test when the timer reaches 0
+  };
+
   return (
     <div>
       <Auth />
       <div>
         <h1>Typing Test</h1>
-        <Timer
+        <TimerComponent
           startCounting={startCounting}
-          timeLeft={timeLeft}
-          setTimeLeft={setTimeLeft}
+          onTimeExpired={() => setIsTestOver(true)}
           correctChars={correctChars}
           totalChars={totalChars}
         />
-        <select onChange={handleTimeLimitChange} value={timeLimit}>
-          <option value={10}>10 seconds</option>
-          <option value={15}>15 seconds</option>
-          <option value={30}>30 seconds</option>
-        </select>
         <div className="typing-area">
           {rows.map((rowWords, idx) => (
             <div key={idx} className="word-row">
